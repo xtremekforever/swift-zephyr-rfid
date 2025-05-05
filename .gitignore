@@ -1,0 +1,5 @@
+# Build
+build*
+
+# Swiftly
+.swift-version
