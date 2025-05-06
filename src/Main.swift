@@ -1,11 +1,3 @@
-extension [UInt8] {
-    mutating func reset(to value: UInt8) {
-        for index in 0..<count {
-            self[index] = value
-        }
-    }
-}
-
 @main
 struct Main {
     static func main() {
@@ -14,27 +6,21 @@ struct Main {
         let buzzerHandle = Led(gpio: &buzzer)
 
         // RFID tracking
-        var rfidValue: [UInt8] = .init(repeating: 0, count: 5)
+        let cardReader = MFRC522()
+        var currentRfid: MFRC522.SerialNumber? = nil
         var rfidValueTimer = CounterTimer(timeout: 6) {
-            rfidValue.reset(to: 0)
+            currentRfid = nil
         }
-
-        // RFID Reader
-        SPI_Init()
-        TM_MFRC522_Init()
 
         while true {
             led0Handle.toggle()
             buzzerHandle.off()
             rfidValueTimer.updateCount()
 
-            // RFID tags are just 5 bytes
-            var newRfidValue: [UInt8] = .init(repeating: 0, count: 5)
-            if TM_MFRC522_Check(&newRfidValue) == 0 {
-                if rfidValue != newRfidValue {
-                    rfidValue = newRfidValue
-                    buzzerHandle.on()
-                }
+            // Read from the card reader, beep if it's a new code
+            if let rfid = cardReader.serialNumber, rfid != currentRfid {
+                buzzerHandle.on()
+                currentRfid = rfid
             }
 
             k_msleep(150)
