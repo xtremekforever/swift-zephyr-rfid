@@ -35,6 +35,7 @@ struct BTData {
 enum BTDataTypes {
     case flags(UInt8)
     case nameComplete(String)
+    case manufacturerData([UInt8])
 
     var btData: BTData {
         switch self {
@@ -42,6 +43,8 @@ enum BTDataTypes {
             return BTData(type: UInt8(BT_DATA_FLAGS), bytes: [flag])
         case .nameComplete(let name):
             return BTData(type: UInt8(BT_DATA_NAME_COMPLETE), bytes: Array(name.utf8))
+        case .manufacturerData(let bytes):
+            return BTData(type: UInt8(BT_DATA_MANUFACTURER_DATA), bytes: bytes)
         }
     }
 }

@@ -1,34 +1,61 @@
 @main
 struct Main {
+    static func createAdvertisementData(with manufacturerData: ManufacturerData) -> [BTDataTypes] {
+        [
+            BTDataTypes.flags(BLEFlags.generalDiscoverable | BLEFlags.noBREDR),
+            BTDataTypes.nameComplete(CONFIG_BT_DEVICE_NAME),
+            BTDataTypes.manufacturerData(manufacturerData.bytes),
+        ]
+    }
+
     static func main() {
         // Outputs
         let led0Handle = Led(gpio: &led0)
         let buzzerHandle = Led(gpio: &buzzer)
 
-        // RFID tracking
+        // Card Reader
         let cardReader = MFRC522()
-        var currentRfid: MFRC522.SerialNumber? = nil
-        var rfidValueTimer = CounterTimer(timeout: 6) {
-            currentRfid = nil
-        }
 
+        // BLE
         BLE.enable()
-        let advertisement = BLEAdvertisement(
+        var manufacturerData = ManufacturerData(companyCode: 0x420, data: [])
+        var advertisement = BLEAdvertisement(
             parameters: bt_le_adv_param.bt_le_adv_conn3(),
-            advertisementData: [
-                BTDataTypes.flags(BLEFlags.generalDiscoverable | BLEFlags.noBREDR),
-                BTDataTypes.nameComplete(CONFIG_BT_DEVICE_NAME),
-            ],
-            scanResponseData: [])
+            advertisementData: createAdvertisementData(with: manufacturerData),
+            scanResponseData: []
+        )
         advertisement.start()
+
+        // RFID tracking + BLE connection
+        var currentRfid: MFRC522.SerialNumber? = nil
+        var rfidValueTimer = CounterTimer(timeout: 400) {  // timeout after 60 seconds
+            currentRfid = nil
+
+            // Add RFID to manufacturing data, update ADV packet
+            manufacturerData.data = []
+            advertisement.update(
+                advertisementData: createAdvertisementData(with: manufacturerData),
+                scanResponseData: []
+            )
+        }
 
         while true {
             led0Handle.toggle()
             buzzerHandle.off()
-            rfidValueTimer.updateCount()
+
+            if currentRfid != nil {
+                rfidValueTimer.updateCount()
+            }
 
             // Read from the card reader, beep if it's a new code
             if let rfid = cardReader.serialNumber, rfid != currentRfid {
+                // Add RFID to manufacturing data, update ADV packet
+                manufacturerData.data = rfid.value
+                advertisement.update(
+                    advertisementData: createAdvertisementData(with: manufacturerData),
+                    scanResponseData: []
+                )
+
                 buzzerHandle.on()
                 currentRfid = rfid
             }
@@ -89,7 +116,7 @@ struct AdvertisementAndScanResponse: ~Copyable {
 
 struct BLEAdvertisement: ~Copyable {
     private var parameters: UnsafeMutablePointer<bt_le_adv_param>
-    private let adsd: AdvertisementAndScanResponse
+    private var adsd: AdvertisementAndScanResponse
 
     init(parameters: bt_le_adv_param, advertisementData: [BTDataTypes], scanResponseData: [BTDataTypes]) {
         var params = parameters
@@ -98,14 +125,34 @@ struct BLEAdvertisement: ~Copyable {
 
         self.adsd = AdvertisementAndScanResponse(
             advertisementData: advertisementData.map { $0.btData },
-            scanResponseData: scanResponseData.map { $0.btData })
+            scanResponseData: scanResponseData.map { $0.btData }
+        )
     }
 
     func start() {
         bt_le_adv_start(self.parameters, adsd.ad, adsd.adCount, adsd.sd, adsd.sdCount)
     }
 
+    mutating func update(advertisementData: [BTDataTypes], scanResponseData: [BTDataTypes]) {
+        self.adsd = AdvertisementAndScanResponse(
+            advertisementData: advertisementData.map { $0.btData },
+            scanResponseData: scanResponseData.map { $0.btData }
+        )
+
+        bt_le_adv_update_data(adsd.ad, adsd.adCount, adsd.sd, adsd.sdCount)
+    }
+
     deinit {
         self.parameters.deallocate()
+    }
+}
+
+// TODO: This also fails to link, not sure what causes that?
+struct ManufacturerData {
+    let companyCode: UInt16
+    var data: [UInt8]
+
+    var bytes: [UInt8] {
+        return [UInt8(companyCode & 0xFF), UInt8(companyCode >> 8)] + data
     }
 }
