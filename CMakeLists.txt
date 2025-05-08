@@ -8,7 +8,7 @@ set(CMAKE_Swift_COMPILATION_MODE wholemodule)
 # FIXME: Skip checking if the compiler works
 set(CMAKE_Swift_COMPILER_WORKS true)
 
-# Create a new project called "ProjectConcrete" and enable "Swift" as a supported language
+# Create a new project called "SwiftRfid" and enable "Swift" as a supported language
 project(SwiftRfid Swift)
 
 # Set global Swift compiler flags
