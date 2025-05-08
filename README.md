@@ -6,6 +6,9 @@ This is a simple example project that shows off how Swift can interop with Zephy
 - Bluetooth (Advertising)
 - SPI
 
+> [!NOTE]
+> Much of the code in this example is based off the work of [Eric Bariaux](https://www.ericbariaux.com/). He was kind enough to share his Swift -> Zephyr examples for the nRF52, which helped significantly with getting started and building this example as well. Check out the [nelcea](https://github.com/nelcea) repo on GitHub for more awesome examples from Eric!
+
 This example is coded to work with the [Adafruit Feather nRF52840 Express](https://docs.zephyrproject.org/latest/boards/adafruit/feather_nrf52840/doc/index.html), but can also work with other BLE-enabled boards with an additional overlay file in the boards/ directory.
 
 Other required/recommended hardware:
