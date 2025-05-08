@@ -1,4 +1,4 @@
-struct Led {
+struct Led: ~Copyable {
     let gpio: UnsafePointer<gpio_dt_spec>
 
     init(gpio: UnsafePointer<gpio_dt_spec>) {

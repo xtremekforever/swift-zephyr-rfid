@@ -3,3 +3,6 @@ build*
 
 # Swiftly
 .swift-version
+
+# Embedded Linux
+.vscode-ctags

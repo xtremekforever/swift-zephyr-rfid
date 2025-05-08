@@ -54,6 +54,80 @@ enum BLEFlags {
     static let noBREDR = UInt8(BT_LE_AD_NO_BREDR)
 }
 
+struct AdvertisementAndScanResponse: ~Copyable {
+    private var advertisementData: [BTData]
+    private var scanResponseData: [BTData]
+    private(set) var ad: UnsafeMutablePointer<bt_data>
+    private(set) var sd: UnsafeMutablePointer<bt_data>
+
+    var adCount: Int {
+        advertisementData.count
+    }
+
+    var sdCount: Int {
+        scanResponseData.count
+    }
+
+    init(advertisementData: [BTData], scanResponseData: [BTData]) {
+        self.advertisementData = advertisementData
+        self.scanResponseData = scanResponseData
+        self.ad = Self.btDataBytes(btData: advertisementData)
+        self.sd = Self.btDataBytes(btData: scanResponseData)
+    }
+
+    private static func btDataBytes(btData: [BTData]) -> UnsafeMutablePointer<bt_data> {
+        let ret = UnsafeMutablePointer<bt_data>.allocate(capacity: btData.count)
+        for (index, value) in btData.enumerated() {
+            var value = value
+            ret[index].type = value.type
+            ret[index].data_len = UInt8(value.bytes.count)
+            let data = UnsafeMutablePointer<UInt8>.allocate(capacity: value.bytes.count)
+            data.initialize(from: &value.bytes, count: value.bytes.count)
+            ret[index].data = UnsafePointer(data)
+        }
+        return ret
+    }
+
+    func release(data: UnsafeMutablePointer<bt_data>, for btData: [BTData]) {
+        for (index, _) in btData.enumerated() {
+            data[index].data.deallocate()
+        }
+        data.deallocate()
+    }
+
+    deinit {
+        release(data: self.ad, for: self.advertisementData)
+        release(data: self.sd, for: self.scanResponseData)
+    }
+
+}
+
+struct BLEAdvertisement: ~Copyable {
+    private var parameters: bt_le_adv_param
+    private var adsd: AdvertisementAndScanResponse
+
+    init(parameters: bt_le_adv_param, advertisementData: [BTDataTypes], scanResponseData: [BTDataTypes]) {
+        self.parameters = parameters
+        self.adsd = AdvertisementAndScanResponse(
+            advertisementData: advertisementData.map { $0.btData },
+            scanResponseData: scanResponseData.map { $0.btData }
+        )
+    }
+
+    mutating func start() {
+        bt_le_adv_start(&parameters, adsd.ad, adsd.adCount, adsd.sd, adsd.sdCount)
+    }
+
+    mutating func update(advertisementData: [BTDataTypes], scanResponseData: [BTDataTypes]) {
+        self.adsd = AdvertisementAndScanResponse(
+            advertisementData: advertisementData.map { $0.btData },
+            scanResponseData: scanResponseData.map { $0.btData }
+        )
+
+        bt_le_adv_update_data(adsd.ad, adsd.adCount, adsd.sd, adsd.sdCount)
+    }
+}
+
 // MARK: Extensions
 extension bt_le_adv_param {
     init(options: UInt32, minInterval: UInt32, maxInterval: UInt32) {
