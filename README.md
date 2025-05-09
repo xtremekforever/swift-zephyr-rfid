@@ -48,43 +48,7 @@ A handy build script has been provided that will compile the firmware for the `a
 
 ```bash
 $ ./build.sh
-Loading Zephyr default modules (Freestanding).
--- Application: ~/swift-zephyr-rfid
--- CMake version: 4.0.2
--- Found Python3: ~/zephyrproject/.venv/bin/python (found suitable version "3.12.3", minimum required is "3.10") found components: Interpreter
--- Cache files will be written to: /home/xtremek/.cache/zephyr
--- Zephyr version: 4.1.0 (~/zephyrproject/zephyr)
--- Found west (found suitable version "1.3.0", minimum required is "0.14.0")
--- Board: adafruit_feather_nrf52840, qualifiers: nrf52840
--- ZEPHYR_TOOLCHAIN_VARIANT not set, trying to locate Zephyr SDK
--- Found host-tools: zephyr 0.17.0 (/home/xtremek/zephyr-sdk-0.17.0)
--- Found toolchain: zephyr 0.17.0 (/home/xtremek/zephyr-sdk-0.17.0)
--- Found Dtc: /home/xtremek/zephyr-sdk-0.17.0/sysroots/x86_64-pokysdk-linux/usr/bin/dtc (found suitable version "1.6.0", minimum required is "1.4.6")
--- Found BOARD.dts: ~/zephyrproject/zephyr/boards/adafruit/feather_nrf52840/adafruit_feather_nrf52840.dts
--- Found devicetree overlay: ~/swift-zephyr-rfid/boards/adafruit_feather_nrf52840.overlay
--- Generated zephyr.dts: ~/swift-zephyr-rfid/build/zephyr/zephyr.dts
--- Generated pickled edt: ~/swift-zephyr-rfid/build/zephyr/edt.pickle
--- Generated devicetree_generated.h: ~/swift-zephyr-rfid/build/zephyr/include/generated/zephyr/devicetree_generated.h
--- Including generated dts.cmake file: ~/swift-zephyr-rfid/build/zephyr/dts.cmake
-Parsing ~/zephyrproject/zephyr/Kconfig
-Loaded configuration '~/zephyrproject/zephyr/boards/adafruit/feather_nrf52840/adafruit_feather_nrf52840_defconfig'
-Merged configuration '~/swift-zephyr-rfid/prj.conf'
-Configuration saved to '~/swift-zephyr-rfid/build/zephyr/.config'
-Kconfig header saved to '~/swift-zephyr-rfid/build/zephyr/include/generated/zephyr/autoconf.h'
--- Found GnuLd: /home/xtremek/zephyr-sdk-0.17.0/arm-zephyr-eabi/arm-zephyr-eabi/bin/ld.bfd (found version "2.38")
--- The C compiler identification is GNU 12.2.0
--- The CXX compiler identification is GNU 12.2.0
--- The ASM compiler identification is GNU
--- Found assembler: /home/xtremek/zephyr-sdk-0.17.0/arm-zephyr-eabi/bin/arm-zephyr-eabi-gcc
--- Using ccache: /usr/bin/ccache
--- The Swift compiler identification is Apple 6.1
--- Configuring done (5.7s)
--- Generating done (0.1s)
--- Build files have been written to: ~/swift-zephyr-rfid/build
-[1/216] Preparing syscall dependency handling
-
-[3/216] Generating include/generated/zephyr/version.h
--- Zephyr version: 4.1.0 (~/zephyrproject/zephyr), build: v4.1.0
+...
 [216/216] Linking C executable zephyr/zephyr.elf
 Memory region         Used Size  Region Size  %age Used
            FLASH:      129456 B         1 MB     12.35%
@@ -93,11 +57,18 @@ Memory region         Used Size  Region Size  %age Used
 Generating files from ~/swift-zephyr-rfid/build/zephyr/zephyr.elf for board: adafruit_feather_nrf52840
 ```
 
-Otherwise, you can just run cmake directly instead:
+Or, the same can be done using `west` if `ZEPHYR_BASE` is set to point to your local Zephyr installation:
 
 ```bash
-$ cmake -B build -G Ninja -DBOARD=adafruit_feather_nrf52840 -DUSE_CCACHE=0 .
-$ cmake --build build
+$ ZEPHYR_BASE=~/zephyrproject/zephyr
+$ west build -p always -b adafruit_feather_nrf52840 .
+...
+[216/216] Linking C executable zephyr/zephyr.elf
+Memory region         Used Size  Region Size  %age Used
+           FLASH:      129456 B         1 MB     12.35%
+             RAM:       18880 B       256 KB      7.20%
+        IDT_LIST:          0 GB        32 KB      0.00%
+Generating files from ~/swift-zephyr-rfid/build/zephyr/zephyr.elf for board: adafruit_feather_nrf52840
 ```
 
 ### Programming
@@ -111,10 +82,14 @@ $ ./program.sh
 ✔️ Reset was applied to 802001236
 ```
 
-You can also run the commands manually if desired:
+Or, if using `west`, use the `flash` command:
 
 ```bash
-$ nrfutil device program --firmware build/zephyr/zephyr.hex
-$ nrfutil device fw-verify --firmware build/zephyr/zephyr.hex
-$ nrfutil device reset
+$ west flash
+-- west flash: rebuilding
+ninja: no work to do.
+-- west flash: using runner jlink
+-- runners.jlink: reset after flashing requested
+-- runners.jlink: JLink version: 8.26
+-- runners.jlink: Flashing file: ~/swift-zephyr-rfid/build/zephyr/zephyr.hex
 ```
