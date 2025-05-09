@@ -1,5 +1,6 @@
 # Build
-build*
+build*/
+.cache
 
 # Swiftly
 .swift-version
