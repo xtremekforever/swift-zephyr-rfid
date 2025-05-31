@@ -19,18 +19,27 @@ add_compile_options(
     # Enable function sections to enable dead code stripping on elf
     "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xfrontend -function-sections>"
 
-    # Use software floating point operations matching GCC
-    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -mfloat-abi=soft>"
-
-    # Use compacted C enums matching GCC
-    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -fshort-enums>"
+    # Enable data sections
+    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -fdata-sections>"
 
     # Disable PIC
     "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -fno-pic>"
 
-    # Add Libc include paths
-    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -I -Xcc ${ZEPHYR_SDK_INSTALL_DIR}/arm-zephyr-eabi/picolibc/include>"
+    # Disable PIE
+    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -fno-pie>"
 )
+
+# Add TOOLCHAIN_C_FLAGS for toolchain to -Xcc flags
+foreach(flag ${TOOLCHAIN_C_FLAGS})
+    # Skip unknown flags
+    string(FIND "${flag}" "-imacro" is_imacro)
+    string(FIND "${flag}" "-mfp16-format" is_mfp16)
+    if(NOT is_imacro EQUAL -1 OR NOT is_mfp16 EQUAL -1)
+        continue()
+    endif()
+
+    add_compile_options("$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc ${flag}>")
+endforeach()
 
 # Add definitions from Zephyr to -Xcc flags
 get_target_property(ZEPHYR_DEFINES zephyr_interface INTERFACE_COMPILE_DEFINITIONS)
@@ -75,8 +84,8 @@ target_link_libraries(zephyr_final
     -Wl,--no-enum-size-warning
 )
 
-# Suppress more linker warnings
-zephyr_linker_sources(RODATA "custom_linker.ld")
+# Discard unused sections
+zephyr_linker_sources(SECTIONS "sections.ld")
 
 add_dependencies(app_swift syscall_list_h_target)
 target_compile_options(app_swift PRIVATE
