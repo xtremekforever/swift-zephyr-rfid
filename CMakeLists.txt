@@ -19,14 +19,14 @@ add_compile_options(
     # Enable function sections to enable dead code stripping on elf
     "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xfrontend -function-sections>"
 
+    # Enable data sections
+    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -fdata-sections>"
+
     # Use software floating point operations matching GCC
     "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -mfloat-abi=soft>"
 
     # Use compacted C enums matching GCC
     "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -fshort-enums>"
-
-    # Enable data sections
-    "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -fdata-sections>"
 
     # Disable PIC
     "$<$<COMPILE_LANGUAGE:Swift>:SHELL:-Xcc -fno-pic>"
