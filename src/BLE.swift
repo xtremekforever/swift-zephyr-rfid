@@ -54,6 +54,11 @@ enum BLEFlags {
     static let noBREDR = UInt8(BT_LE_AD_NO_BREDR)
 }
 
+struct ManufacturerData {
+    let companyCode: UInt16
+    var data: [UInt8]
+}
+
 struct AdvertisementAndScanResponse: ~Copyable {
     private var advertisementData: [BTData]
     private var scanResponseData: [BTData]

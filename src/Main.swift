@@ -65,11 +65,8 @@ struct Main {
     }
 }
 
-// TODO: This also fails to link, not sure what causes that?
-struct ManufacturerData {
-    let companyCode: UInt16
-    var data: [UInt8]
-
+// NOTE: This currently fails to link if moved to a different file
+extension ManufacturerData {
     var bytes: [UInt8] {
         return [UInt8(companyCode & 0xFF), UInt8(companyCode >> 8)] + data
     }
